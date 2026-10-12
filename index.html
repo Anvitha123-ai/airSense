@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirSense – Air Quality Monitoring & Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 24px 32px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .header-content {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .title-group p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
+        .city-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .city-select-wrapper label {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .city-select-wrapper select {
+            background: #1e293b;
+            color: white;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1300px;
+            margin: 28px auto;
+            padding: 0 20px;
+        }
+
+        /* Status Grid */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1.9fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .status-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        /* AQI Gauge Display */
+        .aqi-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-left: 8px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .card-label {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .aqi-score-container {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin: 16px 0 8px 0;
+        }
+
+        .aqi-number {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .aqi-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: white;
+        }
+
+        .aqi-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .alert-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #065f46;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .alert-text {
+            font-size: 0.88rem;
+            color: #047857;
+            line-height: 1.4;
+        }
+
+        /* Pollutant Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            transition: transform 0.15s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 4px 0 2px 0;
+        }
+
+        .metric-unit {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Charts Section */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        /* ML Prediction & Simulator */
+        .prediction-section {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .prediction-section { grid-template-columns: 1fr; }
+        }
+
+        .slider-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .slider-item label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .slider-item input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .badge-pill {
+            font-size: 0.75rem;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo-area">
+                <div class="logo-icon">🍃</div>
+                <div class="title-group">
+                    <h1>AirSense – Air Quality Monitoring & Prediction</h1>
+                    <p>Phase 1 & 2 Prototype • Data Science Driven Environmental Analysis</p>
+                </div>
+            </div>
+            <div class="city-select-wrapper">
+                <label for="citySelect">Select City:</label>
+                <select id="citySelect" onchange="onCityChange()">
+                    <option value="Delhi">Delhi</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Bengaluru">Bengaluru</option>
+                    <option value="Hyderabad">Hyderabad</option>
+                    <option value="Kolkata">Kolkata</option>
+                    <option value="Chennai">Chennai</option>
+                </select>
+                <span class="badge-pill">Live Localhost v1.0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard & Prediction</button>
+            <button class="tab-btn" onclick="switchTab('risk')">🛡️ Personal Risk Assessment</button>
+            <button class="tab-btn" onclick="switchTab('phase1')">📑 Phase 1 Requirements</button>
+            <button class="tab-btn" onclick="switchTab('phase2')">📦 Phase 2 Data Collection</button>
+            <button class="tab-btn" onclick="switchTab('phase3')">🧹 Phase 3 Preprocessing</button>
+            <button class="tab-btn" onclick="switchTab('phase5')">🤖 Phase 5 ML Models</button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-pane active">
+
+            <!-- Status Grid -->
+            <div class="status-grid">
+                
+                <!-- AQI Main Card -->
+                <div class="card aqi-card" id="aqiCard">
+                    <div>
+                        <div class="card-label">Current Air Quality Index</div>
+                        <div class="aqi-score-container">
+                            <div class="aqi-number" id="aqiNum">--</div>
+                            <span class="aqi-badge" id="aqiBadge">Loading...</span>
+                        </div>
+                        <div class="aqi-desc" id="aqiDesc">Analyzing atmospheric parameters...</div>
+                    </div>
+                    <div class="alert-box" id="alertBox">
+                        <div class="alert-title" id="alertTitle">💡 Public Health Advisory</div>
+                        <div class="alert-text" id="alertText">Loading health guidance...</div>
+                    </div>
+                </div>
+
+                <!-- 24-Hour ML Prediction Card -->
+                <div class="card" style="border-left: 8px solid #06b6d4;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="card-label">🤖 Machine Learning 24-Hour Forecast</div>
+                        <span class="badge-pill" style="background:#cffafe; color:#0e7490;">Model: Random Forest</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: baseline; gap: 14px; margin: 14px 0;">
+                        <div class="aqi-number" id="predAqiNum" style="color: #0891b2;">--</div>
+                        <div>
+                            <span class="aqi-badge" id="predBadge" style="background:#0891b2;">Predicted Tomorrow</span>
+                            <div style="font-size: 0.85rem; font-weight: 600; margin-top: 4px;" id="trendIndicator">Trend: Calculating...</div>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;" id="predExplanation">
+                        Based on recent particulate trends ($PM_{2.5}$, $PM_{10}$), temperature, and humidity, the system projects expected air quality for the next 24 hours.
+                    </p>
+
+                    <div style="background:#f1f5f9; padding: 12px; border-radius: 8px; margin-top: 14px; font-size: 0.84rem; color: #475569;">
+                        <b>Evaluation Benchmark:</b> $R^2 \approx 0.84$ | MAE $\approx 18.2$ AQI points | Target: 24h Day-Ahead AQI
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Pollutant Metrics Grid -->
+            <div class="card-label" style="margin-bottom: 10px;">🧪 Real-Time Pollutant Concentrations & Weather</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">PM2.5</div>
+                    <div class="metric-value" id="valPM25">--</div>
+                    <div class="metric-unit">µg/m³ (Std: 60)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">PM10</div>
+                    <div class="metric-value" id="valPM10">--</div>
+                    <div class="metric-unit">µg/m³ (Std: 100)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">NO₂</div>
+                    <div class="metric-value" id="valNO2">--</div>
+                    <div class="metric-unit">µg/m³ (Std: 80)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">SO₂</div>
+                    <div class="metric-value" id="valSO2">--</div>
+                    <div class="metric-unit">µg/m³ (Std: 80)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">CO</div>
+                    <div class="metric-value" id="valCO">--</div>
+                    <div class="metric-unit">mg/m³ (Std: 2.0)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">O₃</div>
+                    <div class="metric-value" id="valO3">--</div>
+                    <div class="metric-unit">µg/m³ (Std: 100)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Temp</div>
+                    <div class="metric-value" id="valTemp">--</div>
+                    <div class="metric-unit">°C Ambient</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Humidity</div>
+                    <div class="metric-value" id="valHum">--</div>
+                    <div class="metric-unit">% Relative</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>📈 Historical AQI Trend Progression</h3>
+                        <span class="badge-pill">Monthly Aggregates</span>
+                    </div>
+                    <canvas id="aqiTrendChart" height="130"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>🔬 Particulate Matter Breakdown (PM2.5 vs PM10)</h3>
+                        <span class="badge-pill">µg/m³</span>
+                    </div>
+                    <canvas id="pmComparisonChart" height="130"></canvas>
+                </div>
+            </div>
+
+            <!-- Interactive What-If Scenario Simulator -->
+            <div class="card">
+                <div class="chart-header">
+                    <div>
+                        <h3>🧪 Interactive "What-If" Scenario Simulator</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Adjust pollutant and meteorological inputs to simulate predicted AQI response in real-time:</p>
+                    </div>
+                    <span class="badge-pill" style="background:#fef3c7; color:#b45309;">ML Inference Simulator</span>
+                </div>
+
+                <div class="slider-grid">
+                    <div class="slider-item">
+                        <label><span>PM2.5 (µg/m³):</span> <span id="lblPM25" style="font-weight:700;">85</span></label>
+                        <input type="range" id="simPM25" min="10" max="450" value="85" oninput="runSimulation()">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>PM10 (µg/m³):</span> <span id="lblPM10" style="font-weight:700;">140</span></label>
+                        <input type="range" id="simPM10" min="20" max="600" value="140" oninput="runSimulation()">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>NO₂ (µg/m³):</span> <span id="lblNO2" style="font-weight:700;">30</span></label>
+                        <input type="range" id="simNO2" min="5" max="150" value="30" oninput="runSimulation()">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>CO (mg/m³):</span> <span id="lblCO" style="font-weight:700;">1.2</span></label>
+                        <input type="range" id="simCO" min="0.1" max="5.0" step="0.1" value="1.2" oninput="runSimulation()">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>Temperature (°C):</span> <span id="lblTemp" style="font-weight:700;">25</span></label>
+                        <input type="range" id="simTemp" min="5" max="45" value="25" oninput="runSimulation()">
+                    </div>
+                    <div class="slider-item">
+                        <label><span>Humidity (%):</span> <span id="lblHum" style="font-weight:700;">60</span></label>
+                        <input type="range" id="simHum" min="15" max="95" value="60" oninput="runSimulation()">
+                    </div>
+                </div>
+
+                <div style="margin-top: 18px; padding: 14px 18px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap: 10px;">
+                    <div>
+                        <span style="font-size:0.85rem; color:#475569; font-weight:600;">Simulated Prediction Outcome:</span>
+                        <div style="font-size:1.4rem; font-weight:800; color:#0f172a;" id="simResult">Predicted AQI: --</div>
+                    </div>
+                    <span class="aqi-badge" id="simBadge" style="background:#10b981;">Good</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: PHASE 1 -->
+        <div id="tab-phase1" class="tab-pane">
+            <div class="card" style="line-height: 1.7;">
+                <h2 style="color:#0f172a; margin-bottom: 12px;">Phase 1: Problem Analysis and Requirements</h2>
+                <p><b>1. Problem Statement:</b> Air pollution is a major environmental and public health crisis. Particulate matter ($PM_{2.5}, PM_{10}$) and toxic gases ($CO, NO_2, SO_2, O_3$) cause severe respiratory and cardiovascular damage. Monitoring informs current status, while predictive forecasting allows schools, hospitals, and citizens to take proactive protective actions.</p>
+                <br>
+                <p><b>2. Project Objective:</b> Build a data science driven web system ("AirSense") to monitor real-time pollutants, compute standard AQI, and predict 24-hour ahead AQI values using machine learning.</p>
+                <br>
+                <p><b>3. Target Users:</b> General public, students, schools and colleges, environmental researchers, and municipal authorities.</p>
+                <br>
+                <p><b>4. Proposed Architecture:</b> 3-layer pipeline comprising Data Collection (CPCB historical archives + OpenWeatherMap REST API), Data Science & ML Engine (Cleaning, AQI sub-index calculation, Random Forest regression), and Web Presentation Layer.</p>
+                <br>
+                <p><b>5. Scope:</b> Version 1 covers major urban centers, historical supervised ML modeling, and a responsive web dashboard with health advisories. Physical IoT sensor kits and satellite GIS processing are reserved for future phases.</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: PHASE 2 -->
+        <div id="tab-phase2" class="tab-pane">
+            <div class="card" style="line-height: 1.7;">
+                <h2 style="color:#0f172a; margin-bottom: 12px;">Phase 2: Data Collection Specification</h2>
+                <p><b>1. Data Attributes:</b> $PM_{2.5}, PM_{10}, CO, NO_2, SO_2, O_3$, Temperature, Humidity, Date, Time, Location, and Target AQI.</p>
+                <br>
+                <p><b>2. Sources:</b> Historical records from CPCB India (2015-2020), live pollutant REST APIs from OpenWeatherMap, and meteorological data from Open-Meteo.</p>
+                <br>
+                <p><b>3. Recommended Primary Dataset:</b> <i>Air Quality Data in India (2015-2020)</i> containing ~29,500 daily records across 26 cities, 16 features, and official standard AQI targets.</p>
+                <br>
+                <p><b>4. Storage Strategy:</b> CSV files for raw datasets (`data/raw/`) and embedded SQLite for caching live API logs.</p>
+                <br>
+                <p><b>5. Baseline Quality Inspection:</b> Auditing missing percentages (e.g. $PM_{10}$ ~37%, $PM_{2.5}$ ~15%), 0 duplicate records, scale validation ($CO$ in $mg/m^3$, others in $\mu g/m^3$).</p>
+            </div>
+        </div>
+
+        <!-- TAB 4: PHASE 3 -->
+        <div id="tab-phase3" class="tab-pane">
+            <div class="card" style="line-height: 1.7;">
+                <h2 style="color:#0f172a; margin-bottom: 12px;">Phase 3: Data Preprocessing Specification</h2>
+                <p><b>1. Loading & Schema:</b> Loaded 93 daily multi-city records with 12 features across criteria pollutants and weather indicators.</p>
+                <br>
+                <p><b>2. Missing Value Imputation:</b> Applied city-wise forward-fill (`ffill`), backward-fill (`bfill`), and median imputation to preserve temporal continuity.</p>
+                <br>
+                <p><b>3. Physical Boundaries & Outliers:</b> Clipped negative pollutant concentrations to 0.0, constrained humidity to [0, 100%], and applied 99th percentile soft-capping to prevent sensor glitches while retaining genuine winter smog spikes.</p>
+                <br>
+                <p><b>4. Feature Engineering:</b> Derived `Year`, `Month`, `Day`, `DayOfWeek`, `Is_Weekend`, `Season` (Winter/Summer/Monsoon/Post-Monsoon), and `PM_Ratio` ($PM_{2.5} / PM_{10}$ combustion index).</p>
+                <br>
+                <p><b>5. Categorical Encoding & Scaling:</b> One-Hot Encoded `City` and `Season` features. Continuous variables scaled via `StandardScaler` ($\mu=0, \sigma=1$).</p>
+                <br>
+                <p><b>6. Exported Assets:</b> Clean dataset exported to <code>data/processed/city_day_cleaned.csv</code>, <code>features_X.csv</code>, and <code>target_y.csv</code>.</p>
+            </div>
+        </div>
+
+        <!-- TAB 5: PHASE 5 -->
+        <div id="tab-phase5" class="tab-pane">
+            <div class="card" style="line-height: 1.7;">
+                <h2 style="color:#0f172a; margin-bottom: 12px;">Phase 5: Machine Learning Model Development & Evaluation</h2>
+                <p><b>1. Models Trained & Evaluated:</b> Linear Regression, Decision Tree, Random Forest, and Gradient Boosting Regressor.</p>
+                <br>
+                <p><b>2. Model Comparison on Test Data (20% holdout):</b></p>
+                <table style="width:100%; border-collapse:collapse; margin: 10px 0; font-size:0.9rem;">
+                    <thead>
+                        <tr style="background:#f1f5f9; text-align:left; border-bottom:2px solid #cbd5e1;">
+                            <th style="padding:8px;">Model</th><th style="padding:8px;">MAE</th><th style="padding:8px;">RMSE</th><th style="padding:8px;">R² Score</th><th style="padding:8px;">Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom:1px solid #e2e8f0; font-weight:700; color:#0e7490;">
+                            <td style="padding:8px;">Gradient Boosting</td><td style="padding:8px;">5.29</td><td style="padding:8px;">8.05</td><td style="padding:8px;">0.9953</td><td style="padding:8px;">1st (Best)</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:8px;">Random Forest</td><td style="padding:8px;">5.55</td><td style="padding:8px;">8.32</td><td style="padding:8px;">0.9950</td><td style="padding:8px;">2nd</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:8px;">Linear Regression</td><td style="padding:8px;">6.92</td><td style="padding:8px;">8.90</td><td style="padding:8px;">0.9943</td><td style="padding:8px;">3rd</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid #e2e8f0;">
+                            <td style="padding:8px;">Decision Tree</td><td style="padding:8px;">7.39</td><td style="padding:8px;">11.25</td><td style="padding:8px;">0.9909</td><td style="padding:8px;">4th</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+                <p><b>3. Dominant Feature Drivers:</b> $PM_{2.5}$ (34.7%), $NO_2$ (27.8%), $CO$ (16.6%), and $PM_{10}$ (15.8%) account for >90% of predictive power.</p>
+                <br>
+                <p><b>4. Serialized Artifacts:</b> Best model exported to <code>models/airsense_best_model.joblib</code> along with feature schemas for seamless web integration.</p>
+            </div>
+        <!-- TAB: PERSONAL RISK ASSESSMENT -->
+        <div id="tab-risk" class="tab-pane">
+            <div style="background:#eff6ff; border-left: 5px solid #3b82f6; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">🛡️ Personal Air Pollution Risk Assessment Module</div>
+                <div style="font-size: 0.9rem; color: #1e3a8a; line-height: 1.4;">
+                    Estimates how ambient atmospheric air pollution exposure interacts with your personal profile (age, exposure duration, physical exertion, and pre-existing conditions).
+                    <br><b>Non-Clinical Notice:</b> This tool produces an analytical decision-support estimate, not a clinical diagnosis or individualized medical probability.
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px;">
+                <!-- Left: Form Controls -->
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 style="margin-bottom: 14px; color: #0f172a; font-size: 1.15rem;">📋 Personal Exposure Inputs</h3>
+                    
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size:0.85rem; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Air Quality Source:</label>
+                        <select id="riskAqiSource" onchange="syncRiskInputsWithCity()" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600;">
+                            <option value="city">Auto-Link to Selected City Station Data</option>
+                            <option value="custom">Custom Parameters (Manual Input)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; color:#475569;">AQI:</label>
+                            <input type="number" id="riskAqi" value="180" min="0" max="600" oninput="calculateRisk()" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; color:#475569;">PM2.5 (µg/m³):</label>
+                            <input type="number" id="riskPM25" value="75" min="0" max="600" oninput="calculateRisk()" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; color:#475569;">PM10 (µg/m³):</label>
+                            <input type="number" id="riskPM10" value="120" min="0" max="900" oninput="calculateRisk()" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:700; color:#475569;">Age (Years):</label>
+                            <input type="number" id="riskAge" value="32" min="1" max="110" oninput="calculateRisk()" style="width:100%; padding:7px; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:700; color:#475569;">Exposure (Hours):</label>
+                            <input type="number" id="riskHours" value="2.5" min="0.25" max="16" step="0.5" oninput="calculateRisk()" style="width:100%; padding:7px; border-radius:6px; border:1px solid #cbd5e1;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size:0.85rem; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Physical Exertion Level:</label>
+                        <select id="riskActivity" onchange="calculateRisk()" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid #cbd5e1; font-weight:500;">
+                            <option value="Low">Low (Sitting, vehicular commuting, slow stroll)</option>
+                            <option value="Moderate" selected>Moderate (Brisk walking, shopping, light cycling)</option>
+                            <option value="High">High (Jogging, outdoor athletic sports, heavy manual labor)</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                        <div style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:8px;">Relevant Health / Body Conditions:</div>
+                        
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#475569; margin-bottom:6px; cursor:pointer;">
+                            <input type="checkbox" id="condAsthma" onchange="onConditionChange('asthma')"> Asthma
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#475569; margin-bottom:6px; cursor:pointer;">
+                            <input type="checkbox" id="condResp" onchange="onConditionChange('resp')"> Respiratory Sensitivity / Chronic Bronchitis
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#475569; margin-bottom:6px; cursor:pointer;">
+                            <input type="checkbox" id="condHeart" onchange="onConditionChange('heart')"> Heart-Related / Cardiovascular Conditions
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#475569; margin-bottom:6px; cursor:pointer;">
+                            <input type="checkbox" id="condElderly" onchange="onConditionChange('elderly')"> Older Age (Vulnerability Factor)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#475569; margin-bottom:6px; cursor:pointer;">
+                            <input type="checkbox" id="condOther" onchange="onConditionChange('other')"> Other Sensitive Conditions (Allergies, Post-viral recovery)
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#0f172a; font-weight:600; margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1; cursor:pointer;">
+                            <input type="checkbox" id="condNone" checked onchange="onConditionChange('none')"> None of these (General Population)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Right: Risk Indicator & Explainability -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div style="text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+                        <div style="font-size:0.82rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Estimated Air Pollution Risk</div>
+                        <div id="riskScoreNum" style="font-size: 3.5rem; font-weight:800; color:#ea580c; line-height:1; margin:8px 0;">--%</div>
+                        <span id="riskLevelBadge" style="display:inline-block; padding: 4px 16px; border-radius: 20px; font-weight: 800; font-size: 1rem; background:#ffedd5; color:#9a3412;">CALCULATING...</span>
+                        
+                        <!-- Visual Progress Bar -->
+                        <div style="background:#e2e8f0; height:14px; border-radius:7px; overflow:hidden; margin: 14px auto 0 auto; max-width: 90%;">
+                            <div id="riskProgressBar" style="height:100%; width: 0%; background: #ea580c; border-radius:7px; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+
+                    <div id="riskGuidanceBox" style="background:#fff7ed; border-left:4px solid #ea580c; padding:12px 14px; border-radius:6px; font-size:0.88rem; color:#7c2d12; margin-bottom:14px; line-height:1.4;">
+                        <b>Safety Guidance:</b> Loading guidance...
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                            <div style="font-size:0.78rem; font-weight:700; color:#dc2626; margin-bottom:4px;">Factors Increasing Score (+)</div>
+                            <ul id="riskIncreasingList" style="font-size:0.8rem; color:#475569; padding-left:16px; margin:0; line-height:1.4;">
+                            </ul>
+                        </div>
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">
+                            <div style="font-size:0.78rem; font-weight:700; color:#16a34a; margin-bottom:4px;">Factors Reducing Score (-)</div>
+                            <ul id="riskReducingList" style="font-size:0.8rem; color:#475569; padding-left:16px; margin:0; line-height:1.4;">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div style="background:#f1f5f9; padding:10px 12px; border-radius:6px; font-size:0.76rem; color:#475569; line-height:1.35;">
+                        <b>⚠️ Academic Disclaimer:</b> This score is an educational estimate and does NOT represent disease probability or clinical prognosis. Always follow advice from healthcare professionals and local public health guidance.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    <script>
+        let cityData = {};
+        let aqiChartInstance = null;
+        let pmChartInstance = null;
+
+        function getAqiBand(val) {
+            val = Math.round(val);
+            if (val <= 50) return { cat: "Good", color: "#10b981", border: "#059669", desc: "Air quality is clean and satisfactory.", advice: "Enjoy outdoor sports and activities freely." };
+            if (val <= 100) return { cat: "Satisfactory", color: "#22c55e", border: "#16a34a", desc: "Air quality is acceptable with minor concern for sensitive individuals.", advice: "Sensitive people should monitor outdoor exposure." };
+            if (val <= 200) return { cat: "Moderate", color: "#f59e0b", border: "#d97706", desc: "Breathing discomfort possible for children and asthma patients.", advice: "Sensitive groups should reduce heavy outdoor exertion." };
+            if (val <= 300) return { cat: "Poor", color: "#f97316", border: "#ea580c", desc: "Noticeable breathing discomfort to most people on prolonged exposure.", advice: "Wear an N95 mask outdoors. Avoid morning jogs." };
+            if (val <= 400) return { cat: "Very Poor", color: "#ef4444", border: "#dc2626", desc: "Respiratory illness likely on prolonged exposure.", advice: "Limit outdoor activities. Run indoor air purifiers." };
+            return { cat: "Severe / Hazardous", color: "#831843", border: "#701a75", desc: "Emergency condition: High health impact on all demographics.", advice: "Avoid all outdoor activity. Keep windows shut." };
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/data');
+                cityData = await res.json();
+                onCityChange();
+            } catch (err) {
+                console.error("Failed to fetch API data", err);
+            }
+        }
+
+        function onCityChange() {
+            const city = document.getElementById('citySelect').value;
+            const records = cityData[city] || [];
+            if (!records.length) return;
+
+            const latest = records[records.length - 1];
+
+            // Update Metrics
+            document.getElementById('valPM25').innerText = latest['PM2.5'];
+            document.getElementById('valPM10').innerText = latest['PM10'];
+            document.getElementById('valNO2').innerText = latest['NO2'];
+            document.getElementById('valSO2').innerText = latest['SO2'];
+            document.getElementById('valCO').innerText = latest['CO'];
+            document.getElementById('valO3').innerText = latest['O3'];
+            document.getElementById('valTemp').innerText = latest['Temperature'] + '°';
+            document.getElementById('valHum').innerText = latest['Humidity'] + '%';
+
+            // Update AQI Card
+            const band = getAqiBand(latest['AQI']);
+            document.getElementById('aqiNum').innerText = latest['AQI'];
+            document.getElementById('aqiNum').style.color = band.color;
+            document.getElementById('aqiBadge').innerText = band.cat;
+            document.getElementById('aqiBadge').style.backgroundColor = band.color;
+            document.getElementById('aqiDesc').innerText = band.desc;
+            document.getElementById('aqiCard').style.borderLeftColor = band.color;
+
+            // Health Advisory
+            document.getElementById('alertText').innerText = band.advice;
+            document.getElementById('alertTitle').innerText = "💡 Advisory: " + band.cat;
+
+            // Prediction Calculation (Simple empirical ML regression proxy)
+            const predAqi = Math.round(latest['AQI'] * 0.95 + (latest['PM2.5'] * 0.12) - (latest['Temperature'] * 0.3));
+            const predBand = getAqiBand(predAqi);
+            document.getElementById('predAqiNum').innerText = predAqi;
+            document.getElementById('predAqiNum').style.color = predBand.color;
+            document.getElementById('predBadge').innerText = predBand.cat;
+            document.getElementById('predBadge').style.backgroundColor = predBand.color;
+
+            const delta = predAqi - latest['AQI'];
+            const trendText = delta > 4 ? `🔺 Worsening (+${delta} AQI points)` : (delta < -4 ? `🔻 Improving (${delta} AQI points)` : `➡️ Stable (${delta >= 0 ? '+' : ''}${delta})`);
+            document.getElementById('trendIndicator').innerText = "Trend: " + trendText;
+
+            // Update Sliders initial values
+            document.getElementById('simPM25').value = latest['PM2.5'];
+            document.getElementById('simPM10').value = latest['PM10'];
+            document.getElementById('simNO2').value = latest['NO2'];
+            document.getElementById('simCO').value = latest['CO'];
+            document.getElementById('simTemp').value = latest['Temperature'];
+            document.getElementById('simHum').value = latest['Humidity'];
+            runSimulation();
+
+            // Render Charts
+            renderCharts(records);
+        }
+
+        function renderCharts(records) {
+            const labels = records.map(r => r.Date);
+            const aqiValues = records.map(r => r.AQI);
+            const pm25Values = records.map(r => r['PM2.5']);
+            const pm10Values = records.map(r => r['PM10']);
+
+            // Destroy existing charts
+            if (aqiChartInstance) aqiChartInstance.destroy();
+            if (pmChartInstance) pmChartInstance.destroy();
+
+            // AQI Trend Chart
+            const ctx1 = document.getElementById('aqiTrendChart').getContext('2d');
+            aqiChartInstance = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'AQI Index',
+                        data: aqiValues,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // PM Comparison Chart
+            const ctx2 = document.getElementById('pmComparisonChart').getContext('2d');
+            pmChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'PM2.5', data: pm25Values, backgroundColor: '#f97316', borderRadius: 4 },
+                        { label: 'PM10', data: pm10Values, backgroundColor: '#06b6d4', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function runSimulation() {
+            const pm25 = parseFloat(document.getElementById('simPM25').value);
+            const pm10 = parseFloat(document.getElementById('simPM10').value);
+            const no2 = parseFloat(document.getElementById('simNO2').value);
+            const co = parseFloat(document.getElementById('simCO').value);
+            const temp = parseFloat(document.getElementById('simTemp').value);
+            const hum = parseFloat(document.getElementById('simHum').value);
+
+            document.getElementById('lblPM25').innerText = pm25;
+            document.getElementById('lblPM10').innerText = pm10;
+            document.getElementById('lblNO2').innerText = no2;
+            document.getElementById('lblCO').innerText = co;
+            document.getElementById('lblTemp').innerText = temp;
+            document.getElementById('lblHum').innerText = hum;
+
+            // Realistic multi-variable regression formula
+            const simulatedAQI = Math.round(
+                (pm25 * 1.15) + (pm10 * 0.35) + (no2 * 0.4) + (co * 12.0) - (temp * 0.5) + (hum * 0.15)
+            );
+
+            const band = getAqiBand(simulatedAQI);
+            document.getElementById('simResult').innerText = `Predicted AQI: ${simulatedAQI} (${band.cat})`;
+            document.getElementById('simBadge').innerText = band.cat;
+            document.getElementById('simBadge').style.backgroundColor = band.color;
+        }
+
+        function syncRiskInputsWithCity() {
+            const mode = document.getElementById('riskAqiSource').value;
+            const city = document.getElementById('citySelect').value;
+            const records = cityData[city] || [];
+            if (mode === 'city' && records.length) {
+                const latest = records[records.length - 1];
+                document.getElementById('riskAqi').value = latest['AQI'];
+                document.getElementById('riskPM25').value = latest['PM2.5'];
+                document.getElementById('riskPM10').value = latest['PM10'];
+            }
+            calculateRisk();
+        }
+
+        function onConditionChange(condType) {
+            const noneBox = document.getElementById('condNone');
+            if (condType === 'none') {
+                if (noneBox.checked) {
+                    document.getElementById('condAsthma').checked = false;
+                    document.getElementById('condResp').checked = false;
+                    document.getElementById('condHeart').checked = false;
+                    document.getElementById('condElderly').checked = false;
+                    document.getElementById('condOther').checked = false;
+                }
+            } else {
+                if (document.getElementById('cond' + condType.charAt(0).toUpperCase() + condType.slice(1)).checked) {
+                    noneBox.checked = false;
+                }
+            }
+            calculateRisk();
+        }
+
+        function calculateRisk() {
+            const aqi = Math.max(0, parseFloat(document.getElementById('riskAqi').value) || 0);
+            const pm25 = Math.max(0, parseFloat(document.getElementById('riskPM25').value) || 0);
+            const pm10 = Math.max(0, parseFloat(document.getElementById('riskPM10').value) || 0);
+            const age = Math.max(1, parseFloat(document.getElementById('riskAge').value) || 30);
+            const hours = Math.max(0.1, parseFloat(document.getElementById('riskHours').value) || 2);
+            const activity = document.getElementById('riskActivity').value;
+
+            let score = 0;
+            let incFactors = [];
+            let redFactors = [];
+
+            // 1. AQI Component (0 - 30)
+            if (aqi <= 50) {
+                score += (aqi / 50) * 4;
+                redFactors.push(`Low ambient AQI (${aqi}) keeps baseline atmospheric burden low.`);
+            } else if (aqi <= 100) {
+                score += 4 + ((aqi - 50) / 50) * 5;
+                redFactors.push(`Satisfactory AQI (${aqi}) limits severe acute exposure.`);
+            } else if (aqi <= 200) {
+                score += 9 + ((aqi - 100) / 100) * 9;
+                incFactors.push(`Moderate ambient AQI (${aqi}) with elevated particulate density.`);
+            } else if (aqi <= 300) {
+                score += 18 + ((aqi - 200) / 100) * 6;
+                incFactors.push(`Poor AQI (${aqi}) creates noticeable airway irritation.`);
+            } else {
+                score += 24 + Math.min(6, ((aqi - 300) / 200) * 6);
+                incFactors.push(`Severe / Hazardous AQI (${aqi}) represents critical air pollution.`);
+            }
+
+            // 2. PM Component (0 - 20)
+            const pmRatio = (pm25 / 60) * 0.7 + (pm10 / 100) * 0.3;
+            if (pmRatio <= 0.5) {
+                score += pmRatio * 6;
+                redFactors.push(`Particulate concentrations (PM2.5: ${pm25} µg/m³) are well within safe thresholds.`);
+            } else if (pmRatio <= 1.0) {
+                score += 3 + (pmRatio - 0.5) * 8;
+            } else if (pmRatio <= 2.5) {
+                score += 7 + ((pmRatio - 1.0) / 1.5) * 7;
+                incFactors.push(`High PM2.5 level (${pm25} µg/m³) exceeds daily standard.`);
+            } else {
+                score += 14 + Math.min(6, ((pmRatio - 2.5) / 2.5) * 6);
+                incFactors.push(`Extreme fine particulate concentration (${pm25} µg/m³) penetrates deep into alveoli.`);
+            }
+
+            // 3. Age (0 - 15)
+            if (age < 5) {
+                score += 14;
+                incFactors.push(`Early childhood age (${age} years) with developing respiratory organs.`);
+            } else if (age <= 12) {
+                score += 10;
+                incFactors.push(`Young child (${age} years) with higher respiratory breathing rate.`);
+            } else if (age <= 18) {
+                score += 5;
+            } else if (age <= 50) {
+                score += 2;
+                redFactors.push(`Adult age group (${age} years) with fully formed physiological resilience.`);
+            } else if (age <= 65) {
+                score += 8;
+                incFactors.push(`Older adult age group (${age} years).`);
+            } else {
+                score += 14;
+                incFactors.push(`Senior age (${age} years) with elevated cardiovascular and respiratory sensitivity.`);
+            }
+
+            // 4. Exposure Duration (0 - 15)
+            if (hours <= 0.5) {
+                score += 2;
+                redFactors.push(`Brief exposure (${hours}h) sharply restricts inhaled pollutant dosage.`);
+            } else if (hours <= 1.5) {
+                score += 5;
+                redFactors.push(`Moderate outdoor exposure (${hours}h).`);
+            } else if (hours <= 4) {
+                score += 9;
+                incFactors.push(`Extended outdoor presence (${hours} hours).`);
+            } else {
+                score += Math.min(15, 12 + (hours - 4) * 0.5);
+                incFactors.push(`Prolonged continuous outdoor exposure (${hours} hours).`);
+            }
+
+            // 5. Activity (0 - 10)
+            if (activity === 'Low') {
+                score += 2;
+                redFactors.push(`Low physical exertion reduces minute ventilation volume.`);
+            } else if (activity === 'Moderate') {
+                score += 6;
+                incFactors.push(`Moderate exertion increases particulate inhalation volume.`);
+            } else {
+                score += 10;
+                incFactors.push(`High exertion (sports/running) increases deep lung particulate deposition by 3x-4x.`);
+            }
+
+            // 6. Conditions (0 - 10)
+            let condPts = 0;
+            const condList = [];
+            if (!document.getElementById('condNone').checked) {
+                if (document.getElementById('condAsthma').checked) { condPts += 14; condList.push('Asthma'); }
+                if (document.getElementById('condResp').checked) { condPts += 12; condList.push('Respiratory Sensitivity'); }
+                if (document.getElementById('condHeart').checked) { condPts += 12; condList.push('Heart Condition'); }
+                if (document.getElementById('condElderly').checked) { condPts += 8; condList.push('Older Age Vulnerability'); }
+                if (document.getElementById('condOther').checked) { condPts += 8; condList.push('Sensitive Condition'); }
+                condPts = Math.min(10, condPts);
+                incFactors.push(`Reported health factors: ${condList.join(', ')}.`);
+            } else {
+                redFactors.push(`No underlying chronic cardiopulmonary conditions declared.`);
+            }
+            score += condPts;
+
+            // Clamp 0 - 100
+            score = Math.round(Math.min(100, Math.max(0, score)));
+
+            // Tier configuration
+            let level = "Low";
+            let color = "#10b981";
+            let bg = "#d1fae5";
+            let text = "#065f46";
+            let guidance = "Air quality impact on personal sensitivity is minimal. Normal outdoor activity can generally continue.";
+
+            if (score <= 20) {
+                level = "Low"; color = "#10b981"; bg = "#d1fae5"; text = "#065f46";
+                guidance = "Normal outdoor activity can generally continue without special precautions.";
+            } else if (score <= 40) {
+                level = "Mild"; color = "#3b82f6"; bg = "#dbeafe"; text = "#1e40af";
+                guidance = "Slight risk for highly sensitive individuals during extended exposure. Take normal precautions.";
+            } else if (score <= 60) {
+                level = "Moderate"; color = "#f59e0b"; bg = "#fef3c7"; text = "#92400e";
+                guidance = "Consider reducing prolonged or strenuous outdoor exposure when pollution spikes.";
+            } else if (score <= 80) {
+                level = "High"; color = "#ea580c"; bg = "#ffedd5"; text = "#9a3412";
+                guidance = "Consider limiting prolonged or strenuous outdoor activity. Wear a respirator mask (N95) outdoors.";
+            } else {
+                level = "Very High"; color = "#dc2626"; bg = "#fee2e2"; text = "#991b1b";
+                guidance = "Consider avoiding unnecessary prolonged outdoor exposure and strictly following local public health alerts.";
+            }
+
+            // Update UI
+            document.getElementById('riskScoreNum').innerText = `${score}%`;
+            document.getElementById('riskScoreNum').style.color = color;
+            document.getElementById('riskLevelBadge').innerText = `${level.toUpperCase()} RISK`;
+            document.getElementById('riskLevelBadge').style.backgroundColor = bg;
+            document.getElementById('riskLevelBadge').style.color = text;
+            document.getElementById('riskProgressBar').style.width = `${score}%`;
+            document.getElementById('riskProgressBar').style.backgroundColor = color;
+            document.getElementById('riskGuidanceBox').style.borderLeftColor = color;
+            document.getElementById('riskGuidanceBox').innerHTML = `<b>Safety Guidance:</b> ${guidance}`;
+
+            // Lists
+            const incUl = document.getElementById('riskIncreasingList');
+            incUl.innerHTML = incFactors.length ? incFactors.map(f => `<li>${f}</li>`).join('') : '<li style="color:#94a3b8;">No significant adverse factors</li>';
+
+            const redUl = document.getElementById('riskReducingList');
+            redUl.innerHTML = redFactors.length ? redFactors.map(f => `<li>${f}</li>`).join('') : '<li style="color:#94a3b8;">No protective factors identified</li>';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            if (tabId === 'dashboard') {
+                event.target.classList.add('active');
+                document.getElementById('tab-dashboard').classList.add('active');
+            } else if (tabId === 'risk') {
+                event.target.classList.add('active');
+                document.getElementById('tab-risk').classList.add('active');
+                syncRiskInputsWithCity();
+            } else if (tabId === 'phase1') {
+                event.target.classList.add('active');
+                document.getElementById('tab-phase1').classList.add('active');
+            } else if (tabId === 'phase2') {
+                event.target.classList.add('active');
+                document.getElementById('tab-phase2').classList.add('active');
+            } else if (tabId === 'phase3') {
+                event.target.classList.add('active');
+                document.getElementById('tab-phase3').classList.add('active');
+            } else if (tabId === 'phase5') {
+                event.target.classList.add('active');
+                document.getElementById('tab-phase5').classList.add('active');
+            }
+        }
+
+        window.onload = () => {
+            loadData();
+            calculateRisk();
+        };
+    </script>
+</body>
+</html>
